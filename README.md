@@ -22,14 +22,14 @@ All keys are optional, if not included it is intended to be treated as if it is 
 * "source" - what device in an ACS deployment generated the question. "Core" for anything from the core, but other devices in a deployment that are communication-capable can send questions to the Core to present to the end-user for more advanced configuration. Source is also used with "id" to identify a question, in case multiple devices on the deployment accidentally use the same "id" for their questions.
 * "category" - allows questions to be organized into categories by the user-facing software, for more logical flow.
 *  "type" - determines how the question can be answered:
-  * "choice" - multiple choice questions (i.e. one of the X options must be chosen, only one option can be chosen)
-  * "selection" - any number of the options (including none) can be selected
-  * "integer" - accepts only whole-number values
-  * "string" - accepts plaintext submission
+	*  "choice" - multiple choice questions (i.e. one of the X options must be chosen, only one option can be chosen)
+	* "selection" - any number of the options (including none) can be selected
+	* "integer" - accepts only whole-number values
+	* "string" - accepts plaintext submission
 * Depending on the "type" sent, different limits can be sent as well. While the device will do input checking, the software can implement these limitations to skip the need to communicate with the device and/or to display the limitation graphically;
-  * "max-length" - for "string" type questions, any input longer than this should not be accepted. 
-  * "upper-limit" - for "integer" type questions, the maximum value that can be accepted.
-  * "lower-limit" - for "integer" type questions, the minimum value that can be accepted.
+	* "max-length" - for "string" type questions, any input longer than this should not be accepted. 
+	* "upper-limit" - for "integer" type questions, the maximum value that can be accepted.
+	* "lower-limit" - for "integer" type questions, the minimum value that can be accepted.
 * "prompt" - the actual question being sent to prompt the user.
 * "options" - for "choice" or "selection" type questions, this array contains the allowable options.
 * "current" - the current value of the question, if applicable. If the question type is "selection", it is an array (even if only 1 or no choices currently).
@@ -60,9 +60,9 @@ Many of the standard keys from "questions" are re-used here: "id", "source", "ca
 
 Command-specific keys:
 * "type" - determines how this is presented to the user:
-  * "button" - a single button to press to execute an action. The software also reports when the user stops pressing the button, allowing for "press and hold" logic, if the device desires.
-  * "latch" - a single button to press to execute an action. Once pressed, the button remains in the pressed "position" until the user presses it again. 
-  * "string" - an arbitrary plaintext entry (can have the same "max-length" limitation as the "string" question)
+	* "button" - a single button to press to execute an action. The software also reports when the user stops pressing the button, allowing for "press and hold" logic, if the device desires.
+	* "latch" - a single button to press to execute an action. Once pressed, the button remains in the pressed "position" until the user presses it again. 
+	* "string" - an arbitrary plaintext entry (can have the same "max-length" limitation as the "string" question)
 * "imply-end" - boolean, if true it implies that sending this command will cause the device to restart, so we should expect an end to this session.
 * "title" - What to call the command function
 * "message" - displays a message for the user, can be used by the device to send confirmations, additional information, etc.
@@ -140,9 +140,9 @@ The payload from the software to the device has 3 main categories:
 * "id" & "source" - same as the question, to identify what is being answered.
 * "answer" - the response to the question. 
   * For "string" and "choice" questions, it is a string.
-  * For "choice" questions, it is an array of strings.
+  * For "choice" questions, it is the selected option as a string.
   * For "integer" questions, it is an integer.
-  * For "boolean" questions, it is a boolean. 
+  * For "selection" questions, it is an array of strings.
 
 Example Answer:
 
@@ -158,8 +158,8 @@ Example Answer:
 
 * "id" & "source" - same as the command, to identify the origin.
 * "input" - the input given by the user
-  * For "button" and "latch" type commands, this a boolean, it is true when pressed, false when un-pressed
-  * For "string" type commands this is the string as-entered.
+	* For "button" and "latch" type commands, this a boolean, it is true when pressed, false when un-pressed
+	* For "string" type commands this is the string as-entered.
 
 Example Command:
 
