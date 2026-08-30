@@ -1,3 +1,5 @@
+# ESP Config
+
 An asynchronous C++ library for ESP32 devices that exposes dynamic configuration options, action commands, and status diagnostics to a host UI over Serial using a standardized JSON protocol, that is then displayed graphically on a host computer. 
 
 Hard-coding information like Wi-Fi credentials, or having to write out a structure for ingesting settings over serial in every project was getting tiring, so I put together this library to handle it.
