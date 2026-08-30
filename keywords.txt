@@ -1,17 +1,40 @@
-# Classes and Structs
+#######################################
+# Datatypes and Classes (KEYWORD1)
+#######################################
+
 ESPConfig	KEYWORD1
 ConfigQuestion	KEYWORD1
 ConfigCommand	KEYWORD1
-ConfigInfo	KEYWORD1
+ConfigInformation	KEYWORD1
+AnswerCallback	KEYWORD1
+ButtonCommandCallback	KEYWORD1
+StringCommandCallback	KEYWORD1
 
-# Methods
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
 begin	KEYWORD2
-update	KEYWORD2
+isAuthenticated	KEYWORD2
+resetAuthentication	KEYWORD2
+
+addChoiceQuestion	KEYWORD2
+addSelectionQuestion	KEYWORD2
+addIntegerQuestion	KEYWORD2
+addStringQuestion	KEYWORD2
 setQuestion	KEYWORD2
-setCommand	KEYWORD2
-setInformation	KEYWORD2
 updateQuestion	KEYWORD2
-updateCommandMessage	KEYWORD2
+updateQuestionOptions	KEYWORD2
+updateQuestionAvailability	KEYWORD2
+
+addButtonCommand	KEYWORD2
+addLatchCommand	KEYWORD2
+addStringCommand	KEYWORD2
+setCommand	KEYWORD2
+updateCommand	KEYWORD2
+updateCommandAvailability	KEYWORD2
+
+addInformation	KEYWORD2
 updateInformation	KEYWORD2
-setPassword	KEYWORD2
-removePassword	KEYWORD2
+
+update	KEYWORD2
