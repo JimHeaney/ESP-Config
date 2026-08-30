@@ -1,0 +1,17 @@
+# Classes and Structs
+ESPConfig	KEYWORD1
+ConfigQuestion	KEYWORD1
+ConfigCommand	KEYWORD1
+ConfigInfo	KEYWORD1
+
+# Methods
+begin	KEYWORD2
+update	KEYWORD2
+setQuestion	KEYWORD2
+setCommand	KEYWORD2
+setInformation	KEYWORD2
+updateQuestion	KEYWORD2
+updateCommandMessage	KEYWORD2
+updateInformation	KEYWORD2
+setPassword	KEYWORD2
+removePassword	KEYWORD2
