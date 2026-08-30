@@ -2,7 +2,7 @@
 
 Hard-coding information like Wi-Fi credentials, or having to write out a structure for ingesting settings over serial in every project was getting tiring, so I put together this library to handle it!
 
-This is **ESP-Config**, An asynchronous Arduino library for ESP32 devices that exposes dynamic configuration options, action commands, and status diagnostics to a host UI over Serial using a standardized JSON protocol, giving the user a graphical interface to configure and control their ESP32 project without the need to recompile code or remember exact Serial structure.
+This is **ESP-Config**, an asynchronous Arduino library for ESP32 devices that exposes dynamic configuration options, action commands, and status diagnostics to a host UI over Serial using a standardized JSON protocol, giving the user a graphical interface to configure and control their ESP32 project without the need to recompile code or remember exact Serial structure.
 
 `ESPConfig` runs in a background FreeRTOS thread, keeping your `loop()` clean and letting you use blocking code without concerns.
 
