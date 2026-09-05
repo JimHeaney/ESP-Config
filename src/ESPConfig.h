@@ -113,7 +113,7 @@ public:
     void updateCommandAvailability(String source, String id, bool unavailable);
 
     // Information Management
-    void addInformation(String source, String id, String title, String value, String category = "", String explanation = "");
+    void addInformation(String source, String id, String category = "", String title, String value, String explanation = "");
     void updateInformation(String source, String id, String value, String explanation = "");
 
     void update();
