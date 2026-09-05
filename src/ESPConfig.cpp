@@ -306,7 +306,7 @@ void ESPConfig::updateCommandAvailability(String source, String id, bool unavail
 // INFORMATION METHODS
 // -----------------------------------------------------------------------------
 
-void ESPConfig::addInformation(String source, String id, String title, String value, String category, String explanation) {
+void ESPConfig::addInformation(String source, String id, String category, String title, String value, String explanation) {
     xSemaphoreTakeRecursive(dataMutex, portMAX_DELAY);
     ConfigInformation info;
     info.source = source;

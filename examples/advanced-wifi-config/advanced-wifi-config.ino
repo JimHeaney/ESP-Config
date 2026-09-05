@@ -31,10 +31,10 @@ void setup() {
 
   config.begin("admin123", "The password is 'admin123'");
 
-  config.addInformation("WiFi", "mac", "MAC Address", WiFi.macAddress(), "Hardware", "Factory-assigned MAC address");
-  config.addInformation("WiFi", "ip", "IP Address", "0.0.0.0", "Network Status", "Currently assigned IPv4 address");
-  config.addInformation("WiFi", "state", "Connection State", "DISCONNECTED", "Network Status", "Current status of the station interface");
-  config.addInformation("WiFi", "connected_ssid", "Active SSID", "None", "Network Status", "Access point currently connected to");
+  config.addInformation("WiFi", "mac", "Hardware", "MAC Address", WiFi.macAddress(),  "Factory-assigned MAC address");
+  config.addInformation("WiFi", "ip", "Network Status", "IP Address", "0.0.0.0",  "Currently assigned IPv4 address");
+  config.addInformation("WiFi", "state", "Network Status", "Connection State", "DISCONNECTED", "Network Status", "Current status of the station interface");
+  config.addInformation("WiFi", "connected_ssid", "Network Status", "Active SSID", "None", "Access point currently connected to");
 
   config.addChoiceQuestion(
     "WiFi",

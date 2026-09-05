@@ -25,8 +25,8 @@ void setup() {
   config.begin();
 
   // Status & Information displays
-  config.addInformation("WiFi", "status", "Connection Status", "DISCONNECTED", "Network");
-  config.addInformation("WiFi", "ip", "IP Address", "0.0.0.0", "Network");
+  config.addInformation("WiFi", "status", "Network", "Connection Status", "DISCONNECTED", );
+  config.addInformation("WiFi", "ip", "Network", "IP Address", "0.0.0.0");
 
   // Credential input questions
   config.addStringQuestion(
