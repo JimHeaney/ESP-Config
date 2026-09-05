@@ -153,12 +153,14 @@ config.addStringCommand(source, id, category, title, stringCallback, maxLength, 
 ### 4. Adding Information (Read-Only Status)
 
 ```cpp
-config.addInformation(source, id, title, value, category, explanation);
+config.addInformation(source, id, category, title, value, explanation);
 // (source, id, category work the same as questions and commands)
-// title: the name of the information. Ex: "MAC Address: "
+// title: the name of the information. Ex: "MAC Address"
 // value: the value of the data. Ex: "00:00:00:00:00"
 // explanation: hover-over tooltip about what this info is.
 ```
+
+*Warning: The order of paramters is changed in V1.1!*
 
 ---
 
