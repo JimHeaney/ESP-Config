@@ -269,30 +269,26 @@ class ESPConfigApp:
         self.notebook = ctk.CTkTabview(self.root)
         self.notebook.pack(pady=5, padx=5, fill="both", expand=True)
 
-        monitor_frame = ctk.CTkFrame(self.root)
-        monitor_frame.pack(pady=5, padx=5, fill="both", expand=True)
+        # Collapsible Serial Monitor
+        self.monitor_sec = CollapsibleSection(
+            self.root, title="Serial Monitor (Device Output)"
+        )
+        self.monitor_sec.pack(pady=5, padx=5, fill="x")
 
-        monitor_header = ctk.CTkFrame(monitor_frame, fg_color="transparent")
-        monitor_header.pack(fill="x", anchor="w", padx=5, pady=2)
-
-        ctk.CTkLabel(
-            monitor_header,
-            text="Serial Monitor (Device Output):",
-            font=ctk.CTkFont(weight="bold"),
-        ).pack(side="left")
+        self.monitor_sec.header_extras.pack(side="right", padx=4)
 
         self.show_config_var = ctk.BooleanVar(value=False)
         self.show_config_chk = ctk.CTkCheckBox(
-            monitor_header,
+            self.monitor_sec.header_extras,
             text="Show [config] Messages",
             variable=self.show_config_var,
             command=self.toggle_config_visibility,
         )
-        self.show_config_chk.pack(side="left", padx=(15, 5))
+        self.show_config_chk.pack(side="left", padx=5)
 
         self.hide_ack_var = ctk.BooleanVar(value=False)
         self.hide_ack_chk = ctk.CTkCheckBox(
-            monitor_header,
+            self.monitor_sec.header_extras,
             text="Hide 'ack' Messages",
             variable=self.hide_ack_var,
             command=self.toggle_config_visibility,
@@ -300,20 +296,19 @@ class ESPConfigApp:
         )
         self.hide_ack_chk.pack(side="left", padx=5)
 
-        self.monitor = ctk.CTkTextbox(monitor_frame, height=120, wrap="word")
+        self.monitor = ctk.CTkTextbox(
+            self.monitor_sec.content_frame, height=120, wrap="word"
+        )
         self.monitor.configure(state="disabled")
         self.monitor.pack(fill="both", expand=True, padx=5, pady=5)
 
-        prog_frame = ctk.CTkFrame(self.root)
-        prog_frame.pack(pady=5, padx=5, fill="both")
+        # Collapsible Program Debug
+        self.prog_sec = CollapsibleSection(
+            self.root, title="Program Debug (Software Output)"
+        )
+        self.prog_sec.pack(pady=5, padx=5, fill="x")
 
-        ctk.CTkLabel(
-            prog_frame,
-            text="Program Debug (Software Output):",
-            font=ctk.CTkFont(weight="bold"),
-        ).pack(anchor="w", padx=5, pady=2)
-
-        self.prog_monitor = ctk.CTkTextbox(prog_frame, height=80)
+        self.prog_monitor = ctk.CTkTextbox(self.prog_sec.content_frame, height=80)
         self.prog_monitor.configure(state="disabled")
         self.prog_monitor.pack(fill="both", expand=True, padx=5, pady=5)
 
@@ -500,6 +495,7 @@ class ESPConfigApp:
 
         for cat, tab_info in self.tabs.items():
             cat_has_visible_items = False
+            sec_visible = {}
 
             for sec_type in ["information", "commands", "settings"]:
                 sec_has_visible = False
@@ -526,11 +522,18 @@ class ESPConfigApp:
                         if source_frame.winfo_ismapped():
                             source_frame.pack_forget()
 
-                section = tab_info["sections"][sec_type]
-                if sec_has_visible and tab_info["has_items"][sec_type]:
-                    if not section.winfo_ismapped():
-                        section.pack(fill="x", pady=4, anchor="n")
+                sec_visible[sec_type] = (
+                    sec_has_visible and tab_info["has_items"][sec_type]
+                )
+                if sec_visible[sec_type]:
                     cat_has_visible_items = True
+
+            # Strictly enforce ordering: Information -> Commands -> Settings
+            for sec_type in ["information", "commands", "settings"]:
+                section = tab_info["sections"][sec_type]
+                if sec_visible[sec_type]:
+                    section.pack_forget()
+                    section.pack(fill="x", pady=4, anchor="n")
                 else:
                     if section.winfo_ismapped():
                         section.pack_forget()
@@ -1001,13 +1004,14 @@ class ESPConfigApp:
 
     def show_section(self, category, sec_type):
         tab_info = self.tabs[category]
-        if not tab_info["has_items"][sec_type]:
-            tab_info["has_items"][sec_type] = True
-            for key in ["information", "commands", "settings"]:
-                if tab_info["has_items"][key]:
-                    tab_info["sections"][key].pack(
-                        fill="x", pady=4, anchor="n"
-                    )
+        tab_info["has_items"][sec_type] = True
+
+        # Strictly enforce ordering: Information -> Commands -> Settings
+        for key in ["information", "commands", "settings"]:
+            if tab_info["has_items"][key]:
+                section = tab_info["sections"][key]
+                section.pack_forget()
+                section.pack(fill="x", pady=4, anchor="n")
 
     def update_gui_with_payload(self, payload):
         if "metadata" in payload:
@@ -1687,8 +1691,9 @@ class ESPConfigApp:
 
                         new_state = not item_ref.get("is_latched", False)
                         item_ref["is_latched"] = new_state
-                        b.configure(fg_color="#10B981" if new_state else "#3B82F6")
-
+                        b.configure(
+                            fg_color="#10B981" if new_state else ctk.ThemeManager.theme["CTkButton"]["fg_color"]
+                        )
                         self.send_command(c_key, new_state)
 
                     btn.configure(command=toggle_latch)
@@ -1714,12 +1719,10 @@ class ESPConfigApp:
                         "message": msg_clean,
                         "container_frame": cmd_container,
                         "row_frame": row_frame,
-                        "title_label": btn,
-                        "title_col": title_col,
                         "widget": btn,
                         "popup": popup_clean,
-                        "is_latched": initial_latched,
                         "msg_label": msg_label,
+                        "is_latched": initial_latched,
                         "unavail_badge": unavail_badge,
                         "is_unavailable": is_unavail,
                         "visible_by_search": True,
@@ -1729,52 +1732,22 @@ class ESPConfigApp:
                     title_clean, title_col = self.parse_macros(
                         cmd.get("title", "Command"), default_color="white"
                     )
+
+                    def trigger_button(c_key=item_key):
+                        p_text = self.rendered_items[c_key].get("popup")
+                        if p_text and not messagebox.askokcancel(
+                            "Confirm Command", p_text
+                        ):
+                            return
+                        self.send_command(c_key, True)
+
                     btn = ctk.CTkButton(
-                        row_frame, text=title_clean, text_color="white"
+                        row_frame,
+                        text=title_clean,
+                        text_color="white",
+                        command=trigger_button,
                     )
                     btn.pack(side="left", padx=4)
-
-                    def handle_popup_btn(c_key=item_key, b=btn):
-                        p_text = self.rendered_items[c_key].get("popup")
-                        confirmed = (
-                            messagebox.askokcancel("Confirm Command", p_text)
-                            if p_text
-                            else True
-                        )
-                        cmd_state = (
-                            "disabled"
-                            if self.rendered_items[c_key].get("is_unavailable")
-                            else "normal"
-                        )
-                        b.configure(state=cmd_state)
-                        if confirmed:
-                            self.send_command(c_key, True)
-                            self.send_command(c_key, False)
-
-                    def on_press(e, c_key=item_key, b=btn):
-                        if self.rendered_items[c_key].get("is_unavailable"):
-                            return
-                        p_text = self.rendered_items[c_key].get("popup")
-                        if p_text:
-                            self.root.after(10, lambda: handle_popup_btn(c_key, b))
-                        else:
-                            self.send_command(c_key, True)
-
-                    def on_release(e, c_key=item_key, b=btn):
-                        if self.rendered_items[c_key].get("is_unavailable"):
-                            return
-                        p_text = self.rendered_items[c_key].get("popup")
-                        if not p_text:
-                            self.send_command(c_key, False)
-                            cmd_state = (
-                                "disabled"
-                                if self.rendered_items[c_key].get("is_unavailable")
-                                else "normal"
-                            )
-                            b.configure(state=cmd_state)
-
-                    btn.bind("<ButtonPress-1>", on_press)
-                    btn.bind("<ButtonRelease-1>", on_release)
 
                     msg_label = ctk.CTkLabel(
                         cmd_container,
@@ -1797,8 +1770,6 @@ class ESPConfigApp:
                         "message": msg_clean,
                         "container_frame": cmd_container,
                         "row_frame": row_frame,
-                        "title_label": btn,
-                        "title_col": title_col,
                         "widget": btn,
                         "popup": popup_clean,
                         "msg_label": msg_label,
@@ -1809,12 +1780,9 @@ class ESPConfigApp:
 
                 self.set_item_unavailable_state(item_key, is_unavail)
 
-        if self.search_var.get().strip():
-            self.apply_filter()
-
 
 if __name__ == "__main__":
     root = ctk.CTk()
-    root.geometry("1000x900")
+    root.geometry("800x700")
     app = ESPConfigApp(root)
     root.mainloop()

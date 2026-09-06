@@ -19,7 +19,7 @@ missing module named pwd - imported by posixpath (delayed, conditional, optional
 missing module named _frozen_importlib_external - imported by importlib._bootstrap (delayed), importlib (optional), importlib.abc (optional)
 excluded module named _frozen_importlib - imported by importlib (optional), importlib.abc (optional)
 missing module named 'collections.abc' - imported by traceback (top-level), typing (top-level), inspect (top-level), logging (top-level), importlib.resources.readers (top-level), selectors (top-level), tracemalloc (top-level), PIL.Image (top-level), PIL._typing (top-level), xml.etree.ElementTree (top-level), PIL.TiffImagePlugin (top-level), PIL.ImageOps (top-level), PIL.ImagePalette (top-level), PIL.GimpGradientFile (conditional), PIL.ImageFilter (top-level), PIL.ImageQt (conditional), PIL.ImageMath (conditional), PIL.ImageSequence (conditional), PIL.PngImagePlugin (conditional), PIL.Jpeg2KImagePlugin (conditional), http.client (top-level)
-missing module named posix - imported by os (conditional, optional), posixpath (optional), shutil (conditional), importlib._bootstrap_external (conditional)
+missing module named posix - imported by posixpath (optional), shutil (conditional), importlib._bootstrap_external (conditional), os (conditional, optional)
 missing module named resource - imported by posix (top-level)
 missing module named 'gi.repository' - imported by pystray._appindicator (top-level), pystray._util.gtk (top-level), pystray._util.notify_dbus (top-level), pystray._gtk (top-level)
 missing module named gi - imported by pystray._appindicator (top-level), pystray._util.gtk (top-level), pystray._util.notify_dbus (top-level), pystray._gtk (top-level)
