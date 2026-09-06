@@ -640,13 +640,26 @@ class ESPConfigApp:
                 upper_lim = item.get("upper_limit")
                 lower_lim = item.get("lower_limit")
                 options = item.get("options", [])
+                orig = item.get("original_val")
 
+                # Check if the user actually modified the answer relative to original_val
                 if q_type == "selection":
                     check_vars = item.get("check_vars", {})
                     val = [opt for opt, var in check_vars.items() if var.get()]
+                    val_list = sorted(val)
+                    orig_list = sorted(
+                        orig
+                        if isinstance(orig, list)
+                        else ([orig] if orig is not None and orig != "" else [])
+                    )
+                    if val_list == orig_list:
+                        continue
 
                 elif q_type == "choice":
                     val = item["entry"].get()
+                    orig_str = str(orig) if orig is not None else ""
+                    if str(val) == orig_str:
+                        continue
                     if options and val not in options:
                         msg = f"Selection for '{item_id}' ({val}) is not a valid option."
                         messagebox.showwarning("Invalid Choice", msg)
@@ -655,6 +668,10 @@ class ESPConfigApp:
 
                 elif q_type == "integer":
                     raw_val = item["entry"].get()
+                    orig_str = str(orig) if orig is not None else ""
+                    if str(raw_val).strip() == orig_str.strip():
+                        continue
+
                     try:
                         val = int(raw_val)
                     except ValueError:
@@ -677,6 +694,10 @@ class ESPConfigApp:
 
                 elif q_type == "string":
                     val = item["entry"].get()
+                    orig_str = str(orig) if orig is not None else ""
+                    if str(val) == orig_str:
+                        continue
+
                     if max_len is not None and len(val) > max_len:
                         msg = f"Value for '{item_id}' length ({len(val)}) exceeds max length ({max_len})."
                         messagebox.showwarning("Out of Bounds", msg)
@@ -684,6 +705,9 @@ class ESPConfigApp:
                         return
                 else:
                     val = item["entry"].get()
+                    orig_str = str(orig) if orig is not None else ""
+                    if str(val) == orig_str:
+                        continue
 
                 ans_obj = {"id": item_id, "answer": val}
                 if item.get("source"):
@@ -696,8 +720,10 @@ class ESPConfigApp:
             payload = {"answers": answers}
             self.send_payload(payload)
         else:
-            self.log_to_prog(f"No answers found to send for category '{category}'.")
-
+            self.log_to_prog(
+                f"No answer changes detected to send for category '{category}'."
+            )
+            
     def discard_answers(self, category):
         count = 0
         for item_key, item in self.rendered_items.items():
