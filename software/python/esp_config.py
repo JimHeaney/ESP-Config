@@ -332,7 +332,7 @@ class ESPConfigApp:
 
         ctk.CTkLabel(
             footer_right,
-            text="V1.0.0",
+            text="V1.2.0",
             font=ctk.CTkFont(size=10, weight="bold"),
             text_color=("gray40", "gray60"),
         ).pack(side="right", padx=(8, 0))
@@ -373,6 +373,15 @@ class ESPConfigApp:
             text_str = text_str.replace("[time]", now_str)
 
         return text_str, color
+
+    def copy_item_value(self, item_key):
+        item = self.rendered_items.get(item_key)
+        if item and "value" in item:
+            val = str(item["value"])
+            self.root.clipboard_clear()
+            self.root.clipboard_append(val)
+            title = item.get("title", "Item")
+            self.log_to_prog(f"Copied '{title}' value to clipboard: {val}")
 
     def safe_int(self, val):
         if val is None or val == "":
@@ -452,6 +461,7 @@ class ESPConfigApp:
                 str(item.get("prompt", "")),
                 str(item.get("message", "")),
                 str(item.get("popup", "")),
+                str(item.get("value", "")),
                 str(item.get("original_val", "")),
                 str(item.get("q_type", "")),
                 " ".join([str(o) for o in item.get("options", [])]),
@@ -1068,6 +1078,7 @@ class ESPConfigApp:
                         val_clean, val_col = self.parse_macros(
                             info.get("value", "")
                         )
+                        item_ref["value"] = val_clean
                         item_ref["value_label"].configure(
                             text=val_clean, text_color=val_col
                         )
@@ -1129,6 +1140,20 @@ class ESPConfigApp:
                 )
                 value_label.pack(side="left")
 
+                copy_btn = ctk.CTkButton(
+                    row_frame,
+                    text="📋",
+                    width=24,
+                    height=20,
+                    fg_color="transparent",
+                    hover_color=("gray80", "gray30"),
+                    text_color=("gray20", "gray80"),
+                    font=ctk.CTkFont(size=11),
+                    command=lambda k=item_key: self.copy_item_value(k),
+                )
+                copy_btn.pack(side="left", padx=(2, 0))
+                ToolTip(copy_btn, "Copy value to clipboard")
+
                 popup_raw = info.get("pop-up", "") or info.get("explanation", "")
                 popup_text, _ = self.parse_macros(popup_raw)
                 help_label = None
@@ -1150,11 +1175,13 @@ class ESPConfigApp:
                     "source": source,
                     "category": category,
                     "title": title_clean,
+                    "value": val_clean,
                     "container_frame": container,
                     "row_frame": row_frame,
                     "title_label": title_label,
                     "title_col": title_col,
                     "value_label": value_label,
+                    "copy_btn": copy_btn,
                     "help_label": help_label,
                     "popup": popup_text,
                     "visible_by_search": True,
