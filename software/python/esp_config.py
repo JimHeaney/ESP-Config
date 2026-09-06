@@ -30,34 +30,70 @@ class ToolTip:
         self.widget = widget
         self.text = text
         self.tooltip_window = None
-        self.widget.bind("<Enter>", self.show_tooltip)
-        self.widget.bind("<Leave>", self.hide_tooltip)
+        self._id = None
+
+        # Bind events with add="+" to avoid overwriting existing event handlers
+        self.widget.bind("<Enter>", self.schedule_show, add="+")
+        self.widget.bind("<Leave>", self.hide_tooltip, add="+")
+        self.widget.bind("<ButtonPress>", self.hide_tooltip, add="+")
+        self.widget.bind("<Unmap>", self.hide_tooltip, add="+")
+        self.widget.bind("<Destroy>", self.hide_tooltip, add="+")
+
+    def schedule_show(self, event=None):
+        self.unschedule()
+        self._id = self.widget.after(150, self.show_tooltip)
+
+    def unschedule(self):
+        if self._id:
+            try:
+                self.widget.after_cancel(self._id)
+            except Exception:
+                pass
+            self._id = None
 
     def show_tooltip(self, event=None):
+        self.unschedule()
         if self.tooltip_window or not self.text:
             return
-        x = self.widget.winfo_rootx() + 25
-        y = self.widget.winfo_rooty() + 20
 
-        self.tooltip_window = ctk.CTkToplevel(self.widget)
-        self.tooltip_window.wm_overrideredirect(True)
-        self.tooltip_window.wm_geometry(f"+{x}+{y}")
+        try:
+            if not self.widget.winfo_exists():
+                return
+        except Exception:
+            return
 
-        label = ctk.CTkLabel(
-            self.tooltip_window,
+        x = self.widget.winfo_rootx() + 20
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 4
+
+        self.tooltip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry(f"+{x}+{y}")
+        try:
+            tw.attributes("-topmost", True)
+        except Exception:
+            pass
+
+        label = tk.Label(
+            tw,
             text=self.text,
             justify="left",
-            corner_radius=6,
-            fg_color=("gray80", "gray25"),
-            text_color=("gray10", "gray90"),
-            padx=8,
+            background="#2b2b2b",
+            foreground="#ffffff",
+            relief="solid",
+            borderwidth=1,
+            font=("TkDefaultFont", 9),
+            padx=6,
             pady=4,
         )
         label.pack()
 
     def hide_tooltip(self, event=None):
+        self.unschedule()
         if self.tooltip_window:
-            self.tooltip_window.destroy()
+            try:
+                self.tooltip_window.destroy()
+            except Exception:
+                pass
             self.tooltip_window = None
 
 
@@ -82,7 +118,6 @@ class CollapsibleSection(ctk.CTkFrame):
         )
         self.toggle_btn.pack(side="left", fill="x", expand=True, padx=4)
 
-        # Container for extra buttons; only packed when populated
         self.header_extras = ctk.CTkFrame(self.header_frame, fg_color="transparent")
 
         self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -113,7 +148,6 @@ class ESPConfigApp:
         self.rendered_items = {}
         self.tray_icon = None
 
-        # Sequence & Message Tracking
         self.tx_message_number = 0
         self.last_rx_message_num = 0
         self.received_msg_numbers = set()
@@ -160,7 +194,6 @@ class ESPConfigApp:
         ctk.set_appearance_mode(new_mode)
 
     def setup_ui(self):
-        # 1. Connection Controls & Top-Right Search Bar
         control_frame = ctk.CTkFrame(self.root)
         control_frame.pack(pady=5, padx=5, fill="x")
 
@@ -194,7 +227,6 @@ class ESPConfigApp:
             text_color=("gray40", "gray60"),
         ).pack(side="left", padx=10)
 
-        # Search Bar
         search_frame = ctk.CTkFrame(control_frame, fg_color="transparent")
         search_frame.pack(side="right", padx=5)
 
@@ -208,7 +240,6 @@ class ESPConfigApp:
         )
         self.search_entry.pack(side="left")
 
-        # 2. Password Frame
         self.pass_frame = ctk.CTkFrame(self.root)
         self.pass_frame.pack(pady=5, padx=5, fill="x")
 
@@ -235,11 +266,9 @@ class ESPConfigApp:
         )
         self.pass_hint.pack(side="left", padx=5)
 
-        # 3. Dynamic Category Tabs
         self.notebook = ctk.CTkTabview(self.root)
         self.notebook.pack(pady=5, padx=5, fill="both", expand=True)
 
-        # 4. Serial Monitor
         monitor_frame = ctk.CTkFrame(self.root)
         monitor_frame.pack(pady=5, padx=5, fill="both", expand=True)
 
@@ -275,7 +304,6 @@ class ESPConfigApp:
         self.monitor.configure(state="disabled")
         self.monitor.pack(fill="both", expand=True, padx=5, pady=5)
 
-        # 5. Program Monitor
         prog_frame = ctk.CTkFrame(self.root)
         prog_frame.pack(pady=5, padx=5, fill="both")
 
@@ -289,7 +317,6 @@ class ESPConfigApp:
         self.prog_monitor.configure(state="disabled")
         self.prog_monitor.pack(fill="both", expand=True, padx=5, pady=5)
 
-        # 6. Footer Info & Theme Control
         footer_frame = ctk.CTkFrame(self.root, fg_color="transparent")
         footer_frame.pack(fill="x", padx=5, pady=(2, 4))
 
@@ -481,7 +508,6 @@ class ESPConfigApp:
                             has_visible_child = True
                             break
 
-                    # Only update layout geometry if frame visibility state changed
                     if has_visible_child:
                         if not source_frame.winfo_ismapped():
                             source_frame.pack(fill="x", pady=4)
@@ -499,7 +525,6 @@ class ESPConfigApp:
                     if section.winfo_ismapped():
                         section.pack_forget()
 
-            # Enable or grey out tab button only if state differs from current
             btn = self.notebook._segmented_button._buttons_dict.get(cat)
             if btn:
                 target_state = "normal" if cat_has_visible_items else "disabled"
@@ -512,7 +537,6 @@ class ESPConfigApp:
                     if cat == current_cat:
                         current_cat_is_enabled = True
 
-        # Automatically switch tab only if current active tab became disabled
         if not current_cat_is_enabled and first_enabled_cat:
             self.notebook.set(first_enabled_cat)
 
@@ -750,7 +774,6 @@ class ESPConfigApp:
             start_payload = json.dumps({"operation": "start"}) + "\n"
             self.serial_port.write(start_payload.encode("utf-8"))
 
-            # Schedule a 5-second connection handshake check
             self.root.after(5000, lambda: self.check_connection_timeout(port))
 
         except Exception as e:
@@ -895,7 +918,6 @@ class ESPConfigApp:
         cmd_sec = CollapsibleSection(scrollable_frame, title="Commands")
         settings_sec = CollapsibleSection(scrollable_frame, title="Settings")
 
-        # Pack header extras frame specifically for settings controls
         settings_sec.header_extras.pack(side="right", padx=4)
 
         send_answers_btn = ctk.CTkButton(
@@ -1041,13 +1063,35 @@ class ESPConfigApp:
                 raw_cat = info.get("category")
 
                 if item_key in self.rendered_items:
+                    item_ref = self.rendered_items[item_key]
                     if "value" in info:
                         val_clean, val_col = self.parse_macros(
                             info.get("value", "")
                         )
-                        self.rendered_items[item_key]["value_label"].configure(
+                        item_ref["value_label"].configure(
                             text=val_clean, text_color=val_col
                         )
+                    if "pop-up" in info or "explanation" in info:
+                        popup_raw = info.get("pop-up", "") or info.get("explanation", "")
+                        popup_text, _ = self.parse_macros(popup_raw)
+                        item_ref["popup"] = popup_text
+                        help_label = item_ref.get("help_label")
+                        if popup_text:
+                            if not help_label or not help_label.winfo_exists():
+                                help_label = ctk.CTkLabel(
+                                    item_ref["row_frame"],
+                                    text=" [?] ",
+                                    text_color=("#1D4ED8", "#60A5FA"),
+                                    font=ctk.CTkFont(size=11, weight="bold"),
+                                    cursor="hand2",
+                                )
+                                help_label.pack(side="left")
+                                help_label.tooltip = ToolTip(help_label, popup_text)
+                                item_ref["help_label"] = help_label
+                            else:
+                                help_label.tooltip.text = popup_text
+                        elif help_label and help_label.winfo_exists():
+                            help_label.pack_forget()
                     continue
 
                 if not raw_cat or not str(raw_cat).strip():
@@ -1087,6 +1131,7 @@ class ESPConfigApp:
 
                 popup_raw = info.get("pop-up", "") or info.get("explanation", "")
                 popup_text, _ = self.parse_macros(popup_raw)
+                help_label = None
                 if popup_text:
                     help_label = ctk.CTkLabel(
                         row_frame,
@@ -1110,6 +1155,7 @@ class ESPConfigApp:
                     "title_label": title_label,
                     "title_col": title_col,
                     "value_label": value_label,
+                    "help_label": help_label,
                     "popup": popup_text,
                     "visible_by_search": True,
                 }
@@ -1218,14 +1264,45 @@ class ESPConfigApp:
                         msg_clean, msg_col = self.parse_macros(
                             q.get("message", ""), default_color=("gray40", "gray60")
                         )
-                        item_ref["msg_label"].configure(
-                            text=msg_clean, text_color=msg_col
-                        )
+                        msg_label = item_ref.get("msg_label")
+                        if not msg_label or not msg_label.winfo_exists():
+                            msg_label = ctk.CTkLabel(
+                                item_ref["container_frame"],
+                                text="",
+                                anchor="w",
+                                justify="left",
+                                font=ctk.CTkFont(size=11, slant="italic"),
+                            )
+                            item_ref["msg_label"] = msg_label
+
+                        msg_label.configure(text=msg_clean, text_color=msg_col)
                         if msg_clean:
-                            item_ref["msg_label"].pack(fill="x", padx=(10, 0))
+                            msg_label.pack(fill="x", padx=(10, 0))
                         else:
-                            item_ref["msg_label"].pack_forget()
+                            msg_label.pack_forget()
                         item_ref["message"] = msg_clean
+
+                    if "pop-up" in q or "explanation" in q:
+                        popup_raw = q.get("pop-up", "") or q.get("explanation", "")
+                        popup_text, _ = self.parse_macros(popup_raw)
+                        item_ref["popup"] = popup_text
+                        help_label = item_ref.get("help_label")
+                        if popup_text:
+                            if not help_label or not help_label.winfo_exists():
+                                help_label = ctk.CTkLabel(
+                                    item_ref["row_frame"],
+                                    text=" [?] ",
+                                    text_color=("#1D4ED8", "#60A5FA"),
+                                    font=ctk.CTkFont(size=11, weight="bold"),
+                                    cursor="hand2",
+                                )
+                                help_label.pack(side="left")
+                                help_label.tooltip = ToolTip(help_label, popup_text)
+                                item_ref["help_label"] = help_label
+                            else:
+                                help_label.tooltip.text = popup_text
+                        elif help_label and help_label.winfo_exists():
+                            help_label.pack_forget()
 
                     if "current" in q:
                         new_curr = q.get("current", "")
@@ -1289,6 +1366,20 @@ class ESPConfigApp:
                     row_frame, text=prompt_text, text_color=prompt_col
                 )
                 prompt_label.pack(side="left", padx=4)
+
+                popup_raw = q.get("pop-up", "") or q.get("explanation", "")
+                popup_text, _ = self.parse_macros(popup_raw)
+                help_label = None
+                if popup_text:
+                    help_label = ctk.CTkLabel(
+                        row_frame,
+                        text=" [?] ",
+                        text_color=("#1D4ED8", "#60A5FA"),
+                        font=ctk.CTkFont(size=11, weight="bold"),
+                        cursor="hand2",
+                    )
+                    help_label.pack(side="left")
+                    help_label.tooltip = ToolTip(help_label, popup_text)
 
                 unavail_badge = ctk.CTkLabel(
                     row_frame,
@@ -1376,6 +1467,7 @@ class ESPConfigApp:
                     "category": category,
                     "prompt": prompt_clean,
                     "message": msg_clean,
+                    "popup": popup_text,
                     "max_length": max_len,
                     "upper_limit": upper_lim,
                     "lower_limit": lower_lim,
@@ -1383,6 +1475,7 @@ class ESPConfigApp:
                     "row_frame": row_frame,
                     "opt_frame": opt_frame,
                     "msg_label": msg_label,
+                    "help_label": help_label,
                     "prompt_label": prompt_label,
                     "prompt_col": prompt_col,
                     "entry": entry_widget,
@@ -1405,21 +1498,33 @@ class ESPConfigApp:
 
                 if item_key in self.rendered_items:
                     item_ref = self.rendered_items[item_key]
-                    if "message" in cmd and "msg_label" in item_ref:
+                    if "message" in cmd:
                         msg_clean, msg_col = self.parse_macros(
                             cmd.get("message", ""), default_color=("gray40", "gray60")
                         )
-                        item_ref["msg_label"].configure(
-                            text=msg_clean, text_color=msg_col
-                        )
+                        msg_label = item_ref.get("msg_label")
+                        if not msg_label or not msg_label.winfo_exists():
+                            msg_label = ctk.CTkLabel(
+                                item_ref["container_frame"],
+                                text="",
+                                anchor="w",
+                                justify="left",
+                                font=ctk.CTkFont(size=11, slant="italic"),
+                            )
+                            item_ref["msg_label"] = msg_label
+
+                        msg_label.configure(text=msg_clean, text_color=msg_col)
                         if msg_clean:
-                            item_ref["msg_label"].pack(fill="x", padx=(10, 0))
+                            msg_label.pack(fill="x", padx=(10, 0))
                         else:
-                            item_ref["msg_label"].pack_forget()
+                            msg_label.pack_forget()
                         item_ref["message"] = msg_clean
-                    if "pop-up" in cmd:
-                        popup_clean, _ = self.parse_macros(cmd.get("pop-up"))
+
+                    if "pop-up" in cmd or "explanation" in cmd:
+                        popup_raw = cmd.get("pop-up", "") or cmd.get("explanation", "")
+                        popup_clean, _ = self.parse_macros(popup_raw)
                         item_ref["popup"] = popup_clean
+
                     if "unavailable" in cmd:
                         is_unavail = bool(cmd.get("unavailable"))
                         self.set_item_unavailable_state(item_key, is_unavail)
@@ -1434,7 +1539,8 @@ class ESPConfigApp:
 
                 category = str(raw_cat).strip()
                 cmd_type = cmd.get("type", "button")
-                popup_clean, _ = self.parse_macros(cmd.get("pop-up"))
+                popup_raw = cmd.get("pop-up", "") or cmd.get("explanation", "")
+                popup_clean, _ = self.parse_macros(popup_raw)
                 msg_clean, msg_col = self.parse_macros(
                     cmd.get("message", ""), default_color=("gray40", "gray60")
                 )

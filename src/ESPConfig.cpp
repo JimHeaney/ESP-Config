@@ -13,7 +13,7 @@ ESPConfig::~ESPConfig() {
     }
 }
 
-void ESPConfig::begin(String password, String hint) {
+void ESPConfig::begin(const String& password, const String& hint) {
     xSemaphoreTakeRecursive(dataMutex, portMAX_DELAY);
     systemPassword = password;
     passwordHint = hint;
@@ -29,6 +29,14 @@ void ESPConfig::begin(String password, String hint) {
         1,
         &serialTaskHandle
     );
+}
+
+void ESPConfig::reserve(size_t questionsCount, size_t commandsCount, size_t infoCount) {
+    xSemaphoreTakeRecursive(dataMutex, portMAX_DELAY);
+    if (questionsCount > 0) questions.reserve(questionsCount);
+    if (commandsCount > 0) commands.reserve(commandsCount);
+    if (infoCount > 0) informationList.reserve(infoCount);
+    xSemaphoreGiveRecursive(dataMutex);
 }
 
 bool ESPConfig::isAuthenticated() const {
@@ -55,8 +63,8 @@ void ESPConfig::resetAuthentication() {
 // QUESTION METHODS
 // -----------------------------------------------------------------------------
 
-void ESPConfig::addChoiceQuestion(String source, String id, String category, String prompt,
-                                  String defaultValue, std::vector<String> options,
+void ESPConfig::addChoiceQuestion(const String& source, const String& id, const String& category, const String& prompt,
+                                  const String& defaultValue, const std::vector<String>& options,
                                   AnswerCallback callback, bool protectedVal, bool unavailable) {
     ConfigQuestion q;
     q.source = source;
@@ -72,8 +80,8 @@ void ESPConfig::addChoiceQuestion(String source, String id, String category, Str
     setQuestion(q);
 }
 
-void ESPConfig::addSelectionQuestion(String source, String id, String category, String prompt,
-                                     String defaultValue, std::vector<String> options,
+void ESPConfig::addSelectionQuestion(const String& source, const String& id, const String& category, const String& prompt,
+                                     const String& defaultValue, const std::vector<String>& options,
                                      AnswerCallback callback, bool protectedVal, bool unavailable) {
     ConfigQuestion q;
     q.source = source;
@@ -89,8 +97,8 @@ void ESPConfig::addSelectionQuestion(String source, String id, String category, 
     setQuestion(q);
 }
 
-void ESPConfig::addSelectionQuestion(String source, String id, String category, String prompt,
-                                     std::vector<String> defaultValues, std::vector<String> options,
+void ESPConfig::addSelectionQuestion(const String& source, const String& id, const String& category, const String& prompt,
+                                     const std::vector<String>& defaultValues, const std::vector<String>& options,
                                      AnswerCallback callback, bool protectedVal, bool unavailable) {
     JsonDocument doc;
     JsonArray arr = doc.to<JsonArray>();
@@ -102,7 +110,7 @@ void ESPConfig::addSelectionQuestion(String source, String id, String category, 
     addSelectionQuestion(source, id, category, prompt, serializedVal, options, callback, protectedVal, unavailable);
 }
 
-void ESPConfig::addIntegerQuestion(String source, String id, String category, String prompt,
+void ESPConfig::addIntegerQuestion(const String& source, const String& id, const String& category, const String& prompt,
                                    int defaultValue, int lowerLimit, int upperLimit,
                                    AnswerCallback callback, bool protectedVal, bool unavailable) {
     ConfigQuestion q;
@@ -121,8 +129,8 @@ void ESPConfig::addIntegerQuestion(String source, String id, String category, St
     setQuestion(q);
 }
 
-void ESPConfig::addStringQuestion(String source, String id, String category, String prompt,
-                                 String defaultValue, int maxLength,
+void ESPConfig::addStringQuestion(const String& source, const String& id, const String& category, const String& prompt,
+                                 const String& defaultValue, int maxLength,
                                  AnswerCallback callback, bool protectedVal, bool unavailable) {
     ConfigQuestion q;
     q.source = source;
@@ -153,7 +161,7 @@ void ESPConfig::setQuestion(const ConfigQuestion& q) {
     xSemaphoreGiveRecursive(dataMutex);
 }
 
-void ESPConfig::updateQuestion(String source, String id, String value, String message) {
+void ESPConfig::updateQuestion(const String& source, const String& id, const String& value, const String& message) {
     xSemaphoreTakeRecursive(dataMutex, portMAX_DELAY);
     for (auto& q : questions) {
         if (q.source == source && q.id == id) {
@@ -166,7 +174,7 @@ void ESPConfig::updateQuestion(String source, String id, String value, String me
     xSemaphoreGiveRecursive(dataMutex);
 }
 
-void ESPConfig::updateQuestion(String source, String id, std::vector<String> values, String message) {
+void ESPConfig::updateQuestion(const String& source, const String& id, const std::vector<String>& values, const String& message) {
     JsonDocument doc;
     JsonArray arr = doc.to<JsonArray>();
     for (const auto& val : values) {
@@ -177,7 +185,7 @@ void ESPConfig::updateQuestion(String source, String id, std::vector<String> val
     updateQuestion(source, id, serializedVal, message);
 }
 
-void ESPConfig::updateQuestionOptions(String source, String id, std::vector<String> options, String currentValue) {
+void ESPConfig::updateQuestionOptions(const String& source, const String& id, const std::vector<String>& options, const String& currentValue) {
     xSemaphoreTakeRecursive(dataMutex, portMAX_DELAY);
     for (auto& q : questions) {
         if (q.source == source && q.id == id) {
@@ -192,7 +200,7 @@ void ESPConfig::updateQuestionOptions(String source, String id, std::vector<Stri
     xSemaphoreGiveRecursive(dataMutex);
 }
 
-void ESPConfig::updateQuestionAvailability(String source, String id, bool unavailable) {
+void ESPConfig::updateQuestionAvailability(const String& source, const String& id, bool unavailable) {
     xSemaphoreTakeRecursive(dataMutex, portMAX_DELAY);
     for (auto& q : questions) {
         if (q.source == source && q.id == id) {
@@ -208,9 +216,9 @@ void ESPConfig::updateQuestionAvailability(String source, String id, bool unavai
 // COMMAND METHODS
 // -----------------------------------------------------------------------------
 
-void ESPConfig::addButtonCommand(String source, String id, String category, String title,
-                                 ButtonCommandCallback callback, String popup,
-                                 String message, bool implyEnd, bool protectedVal, bool unavailable) {
+void ESPConfig::addButtonCommand(const String& source, const String& id, const String& category, const String& title,
+                                 ButtonCommandCallback callback, const String& popup,
+                                 const String& message, bool implyEnd, bool protectedVal, bool unavailable) {
     ConfigCommand cmd;
     cmd.source = source;
     cmd.id = id;
@@ -226,9 +234,9 @@ void ESPConfig::addButtonCommand(String source, String id, String category, Stri
     setCommand(cmd);
 }
 
-void ESPConfig::addLatchCommand(String source, String id, String category, String title,
-                                ButtonCommandCallback callback, String popup,
-                                String message, bool implyEnd, bool protectedVal, bool unavailable) {
+void ESPConfig::addLatchCommand(const String& source, const String& id, const String& category, const String& title,
+                                ButtonCommandCallback callback, const String& popup,
+                                const String& message, bool implyEnd, bool protectedVal, bool unavailable) {
     ConfigCommand cmd;
     cmd.source = source;
     cmd.id = id;
@@ -244,9 +252,9 @@ void ESPConfig::addLatchCommand(String source, String id, String category, Strin
     setCommand(cmd);
 }
 
-void ESPConfig::addStringCommand(String source, String id, String category, String title,
-                                 StringCommandCallback callback, int maxLength, String popup,
-                                 String message, bool implyEnd, bool protectedVal, bool unavailable) {
+void ESPConfig::addStringCommand(const String& source, const String& id, const String& category, const String& title,
+                                 StringCommandCallback callback, int maxLength, const String& popup,
+                                 const String& message, bool implyEnd, bool protectedVal, bool unavailable) {
     ConfigCommand cmd;
     cmd.source = source;
     cmd.id = id;
@@ -278,7 +286,7 @@ void ESPConfig::setCommand(const ConfigCommand& cmd) {
     xSemaphoreGiveRecursive(dataMutex);
 }
 
-void ESPConfig::updateCommand(String source, String id, String message) {
+void ESPConfig::updateCommand(const String& source, const String& id, const String& message) {
     xSemaphoreTakeRecursive(dataMutex, portMAX_DELAY);
     for (auto& cmd : commands) {
         if (cmd.source == source && cmd.id == id) {
@@ -290,7 +298,7 @@ void ESPConfig::updateCommand(String source, String id, String message) {
     xSemaphoreGiveRecursive(dataMutex);
 }
 
-void ESPConfig::updateCommandAvailability(String source, String id, bool unavailable) {
+void ESPConfig::updateCommandAvailability(const String& source, const String& id, bool unavailable) {
     xSemaphoreTakeRecursive(dataMutex, portMAX_DELAY);
     for (auto& cmd : commands) {
         if (cmd.source == source && cmd.id == id) {
@@ -306,7 +314,7 @@ void ESPConfig::updateCommandAvailability(String source, String id, bool unavail
 // INFORMATION METHODS
 // -----------------------------------------------------------------------------
 
-void ESPConfig::addInformation(String source, String id, String category, String title, String value, String explanation) {
+void ESPConfig::addInformation(const String& source, const String& id, const String& category, const String& title, const String& value, const String& explanation) {
     xSemaphoreTakeRecursive(dataMutex, portMAX_DELAY);
     ConfigInformation info;
     info.source = source;
@@ -328,7 +336,7 @@ void ESPConfig::addInformation(String source, String id, String category, String
     xSemaphoreGiveRecursive(dataMutex);
 }
 
-void ESPConfig::updateInformation(String source, String id, String value, String explanation) {
+void ESPConfig::updateInformation(const String& source, const String& id, const String& value, const String& explanation) {
     xSemaphoreTakeRecursive(dataMutex, portMAX_DELAY);
     for (auto& info : informationList) {
         if (info.source == source && info.id == id) {
@@ -339,6 +347,105 @@ void ESPConfig::updateInformation(String source, String id, String value, String
         }
     }
     xSemaphoreGiveRecursive(dataMutex);
+}
+
+// -----------------------------------------------------------------------------
+// JSON HELPERS
+// -----------------------------------------------------------------------------
+
+void ESPConfig::populateMetadata(JsonDocument& doc, bool includePasswordResult) {
+    JsonObject meta = doc["metadata"].to<JsonObject>();
+    meta["version"] = 1;
+    meta["message-number"] = messageNumber++;
+
+    if (includePasswordResult) {
+        meta["password-correct"] = lastPasswordResult;
+    } else if (systemPassword.length() == 0 || isPasswordAuthenticated) {
+        meta["password-correct"] = true;
+    }
+
+    if (passwordHint.length() > 0) {
+        meta["hint"] = passwordHint;
+    }
+}
+
+JsonArray ESPConfig::getOrCreateArray(JsonDocument& doc, const char* key) {
+    if (doc[key].is<JsonArray>()) {
+        return doc[key].as<JsonArray>();
+    }
+    return doc[key].to<JsonArray>();
+}
+
+void ESPConfig::buildQuestionJson(const ConfigQuestion& q, JsonObject& obj, bool fullState) {
+    obj["source"] = q.source;
+    obj["id"] = q.id;
+    obj["category"] = q.category;
+    obj["type"] = q.type;
+    obj["prompt"] = q.prompt;
+
+    if (q.currentValue.startsWith("[")) {
+        obj["current"] = serialized(q.currentValue);
+    } else {
+        obj["current"] = q.currentValue;
+    }
+
+    if (!q.options.empty()) {
+        JsonArray opts = obj["options"].to<JsonArray>();
+        for (const auto& opt : q.options) {
+            opts.add(opt);
+        }
+    }
+
+    if (fullState && q.hasLimits) {
+        obj["lower-limit"] = q.lowerLimit;
+        obj["upper-limit"] = q.upperLimit;
+    }
+
+    if (q.message.length() > 0) obj["message"] = q.message;
+
+    if (fullState && q.maxLength > 0) {
+        obj["max-length"] = q.maxLength;
+    }
+
+    if (q.protectedVal) obj["protected"] = true;
+
+    bool effectiveUnavailable = q.unavailable || (q.protectedVal && systemPassword.length() > 0 && !isPasswordAuthenticated);
+    obj["unavailable"] = effectiveUnavailable;
+}
+
+void ESPConfig::buildCommandJson(const ConfigCommand& c, JsonObject& obj, bool fullState) {
+    obj["source"] = c.source;
+    obj["id"] = c.id;
+
+    if (fullState) {
+        obj["category"] = c.category;
+        obj["type"] = c.type;
+        obj["title"] = c.title;
+
+        if (c.popup.length() > 0) obj["pop-up"] = c.popup;
+        if (c.message.length() > 0) obj["message"] = c.message;
+        if (c.maxLength > 0) obj["max-length"] = c.maxLength;
+        if (c.implyEnd) obj["imply-end"] = true;
+        if (c.protectedVal) obj["protected"] = true;
+    } else {
+        if (c.message.length() > 0) obj["message"] = c.message;
+    }
+
+    bool effectiveUnavailable = c.unavailable || (c.protectedVal && systemPassword.length() > 0 && !isPasswordAuthenticated);
+    obj["unavailable"] = effectiveUnavailable;
+}
+
+void ESPConfig::buildInformationJson(const ConfigInformation& i, JsonObject& obj, bool fullState) {
+    obj["source"] = i.source;
+    obj["id"] = i.id;
+
+    if (fullState) {
+        if (i.category.length() > 0) obj["category"] = i.category;
+        obj["title"] = i.title;
+    }
+
+    obj["value"] = i.value;
+    if (i.explanation.length() > 0) obj["explanation"] = i.explanation;
 }
 
 // -----------------------------------------------------------------------------
@@ -408,6 +515,7 @@ void ESPConfig::processIncomingJson(JsonDocument& doc) {
         String op = doc["operation"].as<String>();
         if (op == "start") {
             sendInitialState();
+            isStarted = true;
             xSemaphoreGiveRecursive(dataMutex);
             return;
         } else if (op == "check") {
@@ -470,83 +578,62 @@ void ESPConfig::processIncomingJson(JsonDocument& doc) {
 }
 
 void ESPConfig::sendInitialState() {
+    for (auto& q : questions) q.needsSync = false;
+    for (auto& c : commands) c.needsSync = false;
+    for (auto& i : informationList) i.needsSync = false;
+    sendPasswordResultSync = false;
+
     JsonDocument doc;
+    JsonDocument tempDoc;
+    populateMetadata(doc);
 
-    JsonArray qArray = doc["questions"].to<JsonArray>();
-    for (const auto& q : questions) {
-        JsonObject obj = qArray.add<JsonObject>();
-        obj["source"] = q.source;
-        obj["id"] = q.id;
-        obj["category"] = q.category;
-        obj["type"] = q.type;
-        obj["prompt"] = q.prompt;
-
-        if (q.currentValue.startsWith("[")) {
-            obj["current"] = serialized(q.currentValue);
-        } else {
-            obj["current"] = q.currentValue;
-        }
-
-        if (!q.options.empty()) {
-            JsonArray opts = obj["options"].to<JsonArray>();
-            for (const auto& opt : q.options) {
-                opts.add(opt);
+    auto flushIfNeeded = [&](size_t itemSize) {
+        if (doc.containsKey("questions") || doc.containsKey("commands") || doc.containsKey("information")) {
+            if (measureJson(doc) + itemSize + 15 > MAX_PAYLOAD_SIZE) {
+                sendConfigPayload(doc);
+                doc.clear();
+                populateMetadata(doc);
             }
         }
+    };
 
-        if (q.hasLimits) {
-            obj["lower-limit"] = q.lowerLimit;
-            obj["upper-limit"] = q.upperLimit;
-        }
+    // Questions
+    for (const auto& q : questions) {
+        tempDoc.clear();
+        JsonObject tempObj = tempDoc.to<JsonObject>();
+        buildQuestionJson(q, tempObj, true);
 
-        if (q.message.length() > 0) obj["message"] = q.message;
-        if (q.maxLength > 0) obj["max-length"] = q.maxLength;
-        if (q.protectedVal) obj["protected"] = true;
+        flushIfNeeded(measureJson(tempDoc));
 
-        bool effectiveUnavailable = q.unavailable || (q.protectedVal && systemPassword.length() > 0 && !isPasswordAuthenticated);
-        obj["unavailable"] = effectiveUnavailable;
+        JsonArray qArray = getOrCreateArray(doc, "questions");
+        JsonObject obj = qArray.add<JsonObject>();
+        buildQuestionJson(q, obj, true);
     }
 
-    JsonArray cArray = doc["commands"].to<JsonArray>();
+    // Commands
     for (const auto& c : commands) {
+        tempDoc.clear();
+        JsonObject tempObj = tempDoc.to<JsonObject>();
+        buildCommandJson(c, tempObj, true);
+
+        flushIfNeeded(measureJson(tempDoc));
+
+        JsonArray cArray = getOrCreateArray(doc, "commands");
         JsonObject obj = cArray.add<JsonObject>();
-        obj["source"] = c.source;
-        obj["id"] = c.id;
-        obj["category"] = c.category;
-        obj["type"] = c.type;
-        obj["title"] = c.title;
-
-        if (c.popup.length() > 0) obj["pop-up"] = c.popup;
-        if (c.message.length() > 0) obj["message"] = c.message;
-        if (c.maxLength > 0) obj["max-length"] = c.maxLength;
-        if (c.implyEnd) obj["imply-end"] = true;
-        if (c.protectedVal) obj["protected"] = true;
-
-        bool effectiveUnavailable = c.unavailable || (c.protectedVal && systemPassword.length() > 0 && !isPasswordAuthenticated);
-        obj["unavailable"] = effectiveUnavailable;
+        buildCommandJson(c, obj, true);
     }
 
-    JsonArray iArray = doc["information"].to<JsonArray>();
+    // Information
     for (const auto& i : informationList) {
+        tempDoc.clear();
+        JsonObject tempObj = tempDoc.to<JsonObject>();
+        buildInformationJson(i, tempObj, true);
+
+        flushIfNeeded(measureJson(tempDoc));
+
+        JsonArray iArray = getOrCreateArray(doc, "information");
         JsonObject obj = iArray.add<JsonObject>();
-        obj["source"] = i.source;
-        obj["id"] = i.id;
-        if (i.category.length() > 0) obj["category"] = i.category;
-        obj["title"] = i.title;
-        obj["value"] = i.value;
-        if (i.explanation.length() > 0) obj["explanation"] = i.explanation;
-    }
-
-    JsonObject meta = doc["metadata"].to<JsonObject>();
-    meta["version"] = 1;
-    meta["message-number"] = messageNumber++;
-
-    if (systemPassword.length() == 0 || isPasswordAuthenticated) {
-        meta["password-correct"] = true;
-    }
-
-    if (passwordHint.length() > 0) {
-        meta["hint"] = passwordHint;
+        buildInformationJson(i, obj, true);
     }
 
     sendConfigPayload(doc);
@@ -555,35 +642,30 @@ void ESPConfig::sendInitialState() {
 void ESPConfig::sendAck() {
     JsonDocument doc;
     doc["operation"] = "ack";
-    JsonObject meta = doc["metadata"].to<JsonObject>();
-    meta["version"] = 1;
-    meta["message-number"] = messageNumber++;
-
-    if (systemPassword.length() == 0 || isPasswordAuthenticated) {
-        meta["password-correct"] = true;
-    }
-
-    if (passwordHint.length() > 0) {
-        meta["hint"] = passwordHint;
-    }
-
+    populateMetadata(doc);
     sendConfigPayload(doc);
 }
 
 void ESPConfig::sendConfigPayload(JsonDocument& doc) {
-    String output;
-    serializeJson(doc, output);
+    // Write directly to Serial output stream without allocating an intermediate String buffer
     Serial.print("[config] ");
-    Serial.println(output);
+    serializeJson(doc, Serial);
+    Serial.println();
 }
 
 void ESPConfig::update() {
     xSemaphoreTakeRecursive(dataMutex, portMAX_DELAY);
 
-    bool hasUpdates = sendPasswordResultSync;
+    if (!isStarted) {
+        xSemaphoreGiveRecursive(dataMutex);
+        return;
+    }
 
-    for (const auto& q : questions) {
-        if (q.needsSync) { hasUpdates = true; break; }
+    bool hasUpdates = sendPasswordResultSync;
+    if (!hasUpdates) {
+        for (const auto& q : questions) {
+            if (q.needsSync) { hasUpdates = true; break; }
+        }
     }
     if (!hasUpdates) {
         for (const auto& c : commands) {
@@ -598,93 +680,72 @@ void ESPConfig::update() {
 
     if (hasUpdates) {
         JsonDocument doc;
+        JsonDocument tempDoc;
+        bool passSync = sendPasswordResultSync;
+        populateMetadata(doc, passSync);
+        sendPasswordResultSync = false;
 
-        bool hasQuestionUpdates = false;
-        JsonArray qArray = doc["questions"].to<JsonArray>();
+        auto flushIfNeeded = [&](size_t itemSize) {
+            if (doc.containsKey("questions") || doc.containsKey("commands") || doc.containsKey("information")) {
+                if (measureJson(doc) + itemSize + 15 > MAX_PAYLOAD_SIZE) {
+                    sendConfigPayload(doc);
+                    doc.clear();
+                    populateMetadata(doc, false);
+                }
+            }
+        };
+
         for (auto& q : questions) {
             if (q.needsSync) {
+                tempDoc.clear();
+                JsonObject tempObj = tempDoc.to<JsonObject>();
+                buildQuestionJson(q, tempObj, false);
+
+                flushIfNeeded(measureJson(tempDoc));
+
+                JsonArray qArray = getOrCreateArray(doc, "questions");
                 JsonObject obj = qArray.add<JsonObject>();
-                obj["source"] = q.source;
-                obj["id"] = q.id;
-                obj["category"] = q.category;
-                obj["type"] = q.type;
-                obj["prompt"] = q.prompt;
-
-                if (q.currentValue.startsWith("[")) {
-                    obj["current"] = serialized(q.currentValue);
-                } else {
-                    obj["current"] = q.currentValue;
-                }
-
-                if (!q.options.empty()) {
-                    JsonArray opts = obj["options"].to<JsonArray>();
-                    for (const auto& opt : q.options) {
-                        opts.add(opt);
-                    }
-                }
-
-                if (q.message.length() > 0) obj["message"] = q.message;
-                if (q.protectedVal) obj["protected"] = true;
-                
-                bool effectiveUnavailable = q.unavailable || (q.protectedVal && systemPassword.length() > 0 && !isPasswordAuthenticated);
-                obj["unavailable"] = effectiveUnavailable;
+                buildQuestionJson(q, obj, false);
 
                 q.needsSync = false;
-                hasQuestionUpdates = true;
             }
         }
-        if (!hasQuestionUpdates) doc.remove("questions");
 
-        bool hasCommandUpdates = false;
-        JsonArray cArray = doc["commands"].to<JsonArray>();
         for (auto& c : commands) {
             if (c.needsSync) {
-                JsonObject obj = cArray.add<JsonObject>();
-                obj["source"] = c.source;
-                obj["id"] = c.id;
-                if (c.message.length() > 0) obj["message"] = c.message;
+                tempDoc.clear();
+                JsonObject tempObj = tempDoc.to<JsonObject>();
+                buildCommandJson(c, tempObj, false);
 
-                bool effectiveUnavailable = c.unavailable || (c.protectedVal && systemPassword.length() > 0 && !isPasswordAuthenticated);
-                obj["unavailable"] = effectiveUnavailable;
+                flushIfNeeded(measureJson(tempDoc));
+
+                JsonArray cArray = getOrCreateArray(doc, "commands");
+                JsonObject obj = cArray.add<JsonObject>();
+                buildCommandJson(c, obj, false);
 
                 c.needsSync = false;
-                hasCommandUpdates = true;
             }
         }
-        if (!hasCommandUpdates) doc.remove("commands");
 
-        bool hasInfoUpdates = false;
-        JsonArray iArray = doc["information"].to<JsonArray>();
         for (auto& i : informationList) {
             if (i.needsSync) {
+                tempDoc.clear();
+                JsonObject tempObj = tempDoc.to<JsonObject>();
+                buildInformationJson(i, tempObj, false);
+
+                flushIfNeeded(measureJson(tempDoc));
+
+                JsonArray iArray = getOrCreateArray(doc, "information");
                 JsonObject obj = iArray.add<JsonObject>();
-                obj["source"] = i.source;
-                obj["id"] = i.id;
-                obj["value"] = i.value;
-                if (i.explanation.length() > 0) obj["explanation"] = i.explanation;
+                buildInformationJson(i, obj, false);
 
                 i.needsSync = false;
-                hasInfoUpdates = true;
             }
         }
-        if (!hasInfoUpdates) doc.remove("information");
 
-        JsonObject meta = doc["metadata"].to<JsonObject>();
-        meta["version"] = 1;
-        meta["message-number"] = messageNumber++;
-
-        if (sendPasswordResultSync) {
-            meta["password-correct"] = lastPasswordResult;
-            sendPasswordResultSync = false;
-        } else if (systemPassword.length() == 0 || isPasswordAuthenticated) {
-            meta["password-correct"] = true;
+        if (doc.containsKey("questions") || doc.containsKey("commands") || doc.containsKey("information") || passSync) {
+            sendConfigPayload(doc);
         }
-
-        if (passwordHint.length() > 0) {
-            meta["hint"] = passwordHint;
-        }
-
-        sendConfigPayload(doc);
     }
 
     xSemaphoreGiveRecursive(dataMutex);

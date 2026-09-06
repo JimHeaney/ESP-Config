@@ -16,7 +16,7 @@ struct ConfigQuestion {
     String source;
     String id;
     String category;
-    String type; // "choice", "selection", "integer", "string"
+    String type;
     String prompt;
     String currentValue;
     String message;
@@ -35,7 +35,7 @@ struct ConfigCommand {
     String source;
     String id;
     String category;
-    String type; // "button", "latch", "string"
+    String type;
     String title;
     String popup;
     String message;
@@ -60,61 +60,64 @@ struct ConfigInformation {
 
 class ESPConfig {
 public:
+    static const size_t MAX_PAYLOAD_SIZE = 512;
+
     ESPConfig();
     ~ESPConfig();
 
-    void begin(String password = "", String hint = "");
+    void begin(const String& password = "", const String& hint = "");
+    void reserve(size_t questionsCount, size_t commandsCount, size_t infoCount);
     
     bool isAuthenticated() const;
     void resetAuthentication();
 
     // Question Builders & Updaters
-    void addChoiceQuestion(String source, String id, String category, String prompt,
-                           String defaultValue, std::vector<String> options,
+    void addChoiceQuestion(const String& source, const String& id, const String& category, const String& prompt,
+                           const String& defaultValue, const std::vector<String>& options,
                            AnswerCallback callback = nullptr, bool protectedVal = false, bool unavailable = false);
 
-    void addSelectionQuestion(String source, String id, String category, String prompt,
-                             String defaultValue, std::vector<String> options,
+    void addSelectionQuestion(const String& source, const String& id, const String& category, const String& prompt,
+                             const String& defaultValue, const std::vector<String>& options,
                              AnswerCallback callback = nullptr, bool protectedVal = false, bool unavailable = false);
 
-    void addSelectionQuestion(String source, String id, String category, String prompt,
-                             std::vector<String> defaultValues, std::vector<String> options,
+    void addSelectionQuestion(const String& source, const String& id, const String& category, const String& prompt,
+                             const std::vector<String>& defaultValues, const std::vector<String>& options,
                              AnswerCallback callback = nullptr, bool protectedVal = false, bool unavailable = false);
 
-    void addIntegerQuestion(String source, String id, String category, String prompt,
+    void addIntegerQuestion(const String& source, const String& id, const String& category, const String& prompt,
                             int defaultValue, int lowerLimit, int upperLimit,
                             AnswerCallback callback = nullptr, bool protectedVal = false, bool unavailable = false);
 
-    void addStringQuestion(String source, String id, String category, String prompt,
-                           String defaultValue = "", int maxLength = 0,
+    void addStringQuestion(const String& source, const String& id, const String& category, const String& prompt,
+                           const String& defaultValue = "", int maxLength = 0,
                            AnswerCallback callback = nullptr, bool protectedVal = false, bool unavailable = false);
 
     void setQuestion(const ConfigQuestion& q);
-    void updateQuestion(String source, String id, String value, String message = "");
-    void updateQuestion(String source, String id, std::vector<String> values, String message = "");
-    void updateQuestionOptions(String source, String id, std::vector<String> options, String currentValue = "");
-    void updateQuestionAvailability(String source, String id, bool unavailable);
+    void updateQuestion(const String& source, const String& id, const String& value, const String& message = "");
+    void updateQuestion(const String& source, const String& id, const std::vector<String>& values, const String& message = "");
+    void updateQuestionOptions(const String& source, const String& id, const std::vector<String>& options, const String& currentValue = "");
+    void updateQuestionAvailability(const String& source, const String& id, bool unavailable);
 
     // Command Builders & Updaters
-    void addButtonCommand(String source, String id, String category, String title,
-                          ButtonCommandCallback callback = nullptr, String popup = "",
-                          String message = "", bool implyEnd = false, bool protectedVal = false, bool unavailable = false);
+    void addButtonCommand(const String& source, const String& id, const String& category, const String& title,
+                          ButtonCommandCallback callback = nullptr, const String& popup = "",
+                          const String& message = "", bool implyEnd = false, bool protectedVal = false, bool unavailable = false);
 
-    void addLatchCommand(String source, String id, String category, String title,
-                         ButtonCommandCallback callback = nullptr, String popup = "",
-                         String message = "", bool implyEnd = false, bool protectedVal = false, bool unavailable = false);
+    void addLatchCommand(const String& source, const String& id, const String& category, const String& title,
+                         ButtonCommandCallback callback = nullptr, const String& popup = "",
+                         const String& message = "", bool implyEnd = false, bool protectedVal = false, bool unavailable = false);
 
-    void addStringCommand(String source, String id, String category, String title,
-                          StringCommandCallback callback = nullptr, int maxLength = 0, String popup = "",
-                          String message = "", bool implyEnd = false, bool protectedVal = false, bool unavailable = false);
+    void addStringCommand(const String& source, const String& id, const String& category, const String& title,
+                          StringCommandCallback callback = nullptr, int maxLength = 0, const String& popup = "",
+                          const String& message = "", bool implyEnd = false, bool protectedVal = false, bool unavailable = false);
 
     void setCommand(const ConfigCommand& cmd);
-    void updateCommand(String source, String id, String message);
-    void updateCommandAvailability(String source, String id, bool unavailable);
+    void updateCommand(const String& source, const String& id, const String& message);
+    void updateCommandAvailability(const String& source, const String& id, bool unavailable);
 
     // Information Management
-    void addInformation(String source, String id, String title, String value, String category = "", String explanation = "");
-    void updateInformation(String source, String id, String value, String explanation = "");
+    void addInformation(const String& source, const String& id, const String& category, const String& title, const String& value, const String& explanation = "");
+    void updateInformation(const String& source, const String& id, const String& value, const String& explanation = "");
 
     void update();
 
@@ -128,6 +131,7 @@ private:
     bool isPasswordAuthenticated = true;
     bool lastPasswordResult = false;
     bool sendPasswordResultSync = false;
+    bool isStarted = false;
     uint32_t messageNumber = 0;
 
     SemaphoreHandle_t dataMutex;
@@ -139,6 +143,13 @@ private:
     void sendInitialState();
     void sendConfigPayload(JsonDocument& doc);
     void sendAck();
+
+    // Protocol Helpers
+    void populateMetadata(JsonDocument& doc, bool includePasswordResult = false);
+    void buildQuestionJson(const ConfigQuestion& q, JsonObject& obj, bool fullState);
+    void buildCommandJson(const ConfigCommand& c, JsonObject& obj, bool fullState);
+    void buildInformationJson(const ConfigInformation& i, JsonObject& obj, bool fullState);
+    JsonArray getOrCreateArray(JsonDocument& doc, const char* key);
 };
 
 #endif // CUSTOM_ARDUINO_LIBRARY_ESP_CONFIG_H
